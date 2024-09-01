@@ -4,6 +4,27 @@ import google.generativeai as genai
 
 from PIL import Image
 
+import pypdfium2 as pdfium
+import markdown
+
+def read_images(path):
+    # If it is .pdf, convert it to images
+    if path.endswith('.pdf'):
+        images = []
+        pdf = pdfium.PdfDocument(path)
+        for i in range(len(pdf)):
+            page = pdf[i]
+            image = page.render(scale=4).to_pil()
+            images.append(image)
+        return images
+    else:
+        # Otherwise assume its a directory of images
+        images = []
+        for file in os.listdir(path):
+            image = Image.open(f'{path}/{file}')
+            images.append(image)
+        return images
+
 GOOGLE_API_KEY=os.environ.get('GOOGLE_API_KEY')
 
 genai.configure(api_key=GOOGLE_API_KEY)
@@ -14,7 +35,7 @@ for m in genai.list_models():
 
 model = genai.GenerativeModel('gemini-1.5-flash')
 
-directory = input('Enter the directory of images: ')
+path = input('Enter the PDF path or directory of images: ')
 
 prompt = '''
 Please perform OCR on the attached image containing mathematical content. Convert all text to plain text format, ensuring that every piece of mathematical content is represented using LaTeX within `$...$` delimiters. Do not use HTML, Unicode characters, or any other formatting—only LaTeX for all mathematical expressions.
@@ -61,8 +82,7 @@ result_text = ''
 
 last_image = None
 last_response = None
-for file in os.listdir(directory):
-    image = Image.open(f'{directory}/{file}')
+for image in read_images(path):
     parts = [{'role': 'user', 'parts': [prompt]}]
     if last_image:
         parts.append({'role': 'user', 'parts': [last_image]})
@@ -84,11 +104,11 @@ for file in os.listdir(directory):
     last_image = image
     last_response = result.text.strip()
 
-result_text = result_text.replace('\n', '<br>')
+result_html = markdown.markdown(result_text, extensions=['extra', 'tables'])
 
 with open('template.html', 'r') as f:
     template = f.read()
-result = template.replace('${text}', result_text)
+result = template.replace('${text}', result_html)
 
-with open(f'{directory}.html', 'w', encoding='UTF-8') as f:
+with open(f'{path}.html', 'w', encoding='UTF-8') as f:
     f.write(result)

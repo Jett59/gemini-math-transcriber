@@ -1,2 +1,4 @@
 google-generativeai
 pillow
+pypdfium2
+markdown
