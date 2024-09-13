@@ -38,44 +38,22 @@ model = genai.GenerativeModel('gemini-1.5-flash')
 path = input('Enter the PDF path or directory of images: ')
 
 prompt = '''
-Please perform OCR on the attached image containing mathematical content. Convert all text to plain text format, ensuring that every piece of mathematical content is represented using LaTeX within `$...$` delimiters. Do not use HTML, Unicode characters, or any other formatting—only LaTeX for all mathematical expressions.
+Please perform OCR on the attached image containing mathematical content. Convert all text to markdown format, ensuring that every piece of mathematical content is represented using LaTeX within `$...$` delimiters. Do not use HTML, Unicode characters, or any other formatting—only LaTeX for all mathematical expressions.
 For example:
 * Fractions should be written as `$\\frac{a}{b}$`.
 * Integrals should appear as `$\\int_a^b f(x) \\, dx$`.
 * Any superscripts or subscripts should be formatted using LaTeX, such as `$x^2$` or `$a_i$`.
-If you encounter any graphs or diagrams, attempt to draw a rough sketch using simple SVG. For each graph, generate a detailed caption that describes the graph's content and purpose, and include this caption as alt text within the SVG. For example:
-<svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" role="img" aria-label="A graph of a parabola opening upwards. The parabola passes through the points (-2, 4), (0, 0), and (2, 4).">
-    <g aria-hidden="true">
-        <line x1="150" y1="0" x2="150" y2="300" stroke="black" stroke-width="2"/>
-        <line x1="0" y1="150" x2="300" y2="150" stroke="black" stroke-width="2"/>
+If you encounter any graphs or diagrams, please provide a detailed description of the content in text form in the form `[diagram: <description>]`.
+Contents pages should be formatted without any dotted lines. List the page number directly after the title. For example:
+```
+# Contents
 
-        <path d="M 50 150 Q 150 50 250 150" stroke="blue" stroke-width="2" fill="none"/>
+1. Introduction: 1
+2. Methods: 3
+3. Results: 5
 
-        <text x="135" y="165" font-family="Arial" font-size="12" fill="black">-5</text>
-        <text x="105" y="165" font-family="Arial" font-size="12" fill="black">-4</text>
-        <text x="75" y="165" font-family="Arial" font-size="12" fill="black">-3</text>
-        <text x="45" y="165" font-family="Arial" font-size="12" fill="black">-2</text>
-        <text x="15" y="165" font-family="Arial" font-size="12" fill="black">-1</text>
-        <text x="165" y="165" font-family="Arial" font-size="12" fill="black">1</text>
-        <text x="195" y="165" font-family="Arial" font-size="12" fill="black">2</text>
-        <text x="225" y="165" font-family="Arial" font-size="12" fill="black">3</text>
-        <text x="255" y="165" font-family="Arial" font-size="12" fill="black">4</text>
-        <text x="285" y="165" font-family="Arial" font-size="12" fill="black">5</text>
-
-        <text x="155" y="135" font-family="Arial" font-size="12" fill="black">5</text>
-        <text x="155" y="105" font-family="Arial" font-size="12" fill="black">4</text>
-        <text x="155" y="75" font-family="Arial" font-size="12" fill="black">3</text>
-        <text x="155" y="45" font-family="Arial" font-size="12" fill="black">2</text>
-        <text x="155" y="15" font-family="Arial" font-size="12" fill="black">1</text>
-        <text x="155" y="165" font-family="Arial" font-size="12" fill="black">0</text>
-        <text x="155" y="195" font-family="Arial" font-size="12" fill="black">-1</text>
-        <text x="155" y="225" font-family="Arial" font-size="12" fill="black">-2</text>
-        <text x="155" y="255" font-family="Arial" font-size="12" fill="black">-3</text>
-        <text x="155" y="285" font-family="Arial" font-size="12" fill="black">-4</text>
-    </g>
-</svg>
-If generating a sketch is not possible, insert the placeholder `[Graph/Diagram]` and provide the detailed caption separately.
-Your output should strictly adhere to these guidelines, focusing only on the textual and mathematical content, with all mathematical elements formatted exclusively using LaTeX. Graphs and diagrams should be represented with rough SVG sketches accompanied by descriptive alt text.
+```
+Your output should strictly adhere to these guidelines, focusing only on the textual and mathematical content, with all mathematical elements formatted exclusively using LaTeX. Graphs and diagrams should be replaced with a detailed description.
 '''
 
 result_text = ''
@@ -91,8 +69,8 @@ for image in read_images(path):
     do_continue = True
     while do_continue:
         try:
-            result = model.generate_content(parts, generation_config={'temperature': 0, 'response_mime_type': 'text/plain'})
-        except e:
+            result = model.generate_content(parts, generation_config={'temperature': 0})
+        except Exception as e:
             print('Retrying...', e)
             time.sleep(15)
             continue
