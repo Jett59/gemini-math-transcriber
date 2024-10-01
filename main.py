@@ -56,7 +56,7 @@ Contents pages should be formatted without any dotted lines. List the page numbe
 Your output should strictly adhere to these guidelines, focusing only on the textual and mathematical content, with all mathematical elements formatted exclusively using LaTeX. Graphs and diagrams should be replaced with a detailed description.
 '''
 
-result_text = ''
+total_result_text = ''
 
 last_image = None
 last_response = None
@@ -69,20 +69,21 @@ for image in read_images(path):
     do_continue = True
     while do_continue:
         try:
-            result = model.generate_content(parts, generation_config={'temperature': 0})
+            result = model.generate_content(parts, generation_config={'temperature': 0.1})
+            print(result)
+            result_text = result.text
+            print(result_text)
         except Exception as e:
             print('Retrying...', e)
             time.sleep(15)
             continue
         time.sleep(5)
         do_continue = False
-    print(result)
-    print(result.text)
-    result_text += result.text.strip() + '\n'
+    total_result_text += result_text.strip() + '\n'
     last_image = image
-    last_response = result.text.strip()
+    last_response = result_text.strip()
 
-result_html = markdown.markdown(result_text, extensions=['extra', 'tables'])
+result_html = markdown.markdown(total_result_text, extensions=['extra', 'tables'])
 
 with open('template.html', 'r') as f:
     template = f.read()
