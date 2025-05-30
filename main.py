@@ -37,27 +37,8 @@ model = genai.GenerativeModel('gemini-2.0-flash')
 
 path = input('Enter the PDF path or directory of images: ')
 
-prompt = '''
-Please perform accurate OCR on the attached image containing mathematical content. Transcribe all text to markdown format, ensuring that every piece of mathematical content is represented using LaTeX within `$...$` delimiters or `$$...$$` for multiline expressions. Do not use HTML, Unicode characters, or any other formatting—only LaTeX for all mathematical expressions. Ensure that textual format will render correctly under markdown rules, including line breaks and emphasis.
-
-For example:
-* Fractions should be written as `$\\frac{a}{b}$`.
-* Integrals should appear as `$\\int_a^b f(x) \\, dx$`.
-* Any superscripts or subscripts should be formatted using LaTeX, such as `$x^2$` or `$a_i$`.
-* Headings should appear as `# Heading` or `## Heading`
-* Lists should appear as ```
-
-  * Item1
-  * Item2
-
-``` (with a blank line before and after)
-
-If you encounter any graphs or diagrams, please provide a detailed description of the content in text form in the form `[diagram: <description>]`.
-
-If there are spaces or lines for written answers, omit these from the transcription. Under no circumstances include `...` for writing spaces.
-
-Your output should strictly adhere to these guidelines, only transcribing the textual and mathematical content, with all mathematical elements formatted exclusively using LaTeX. Graphs and diagrams should be replaced with a detailed description.
-'''
+with open('prompt.md', 'r') as f:
+  prompt = f.read()
 
 total_result_text = ''
 
