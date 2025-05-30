@@ -33,27 +33,30 @@ for m in genai.list_models():
     if 'generateContent' in m.supported_generation_methods:
         print(m.name)
 
-model = genai.GenerativeModel('gemini-1.5-flash')
+model = genai.GenerativeModel('gemini-2.0-flash')
 
 path = input('Enter the PDF path or directory of images: ')
 
 prompt = '''
-Please perform OCR on the attached image containing mathematical content. Convert all text to markdown format, ensuring that every piece of mathematical content is represented using LaTeX within `$...$` delimiters. Do not use HTML, Unicode characters, or any other formatting—only LaTeX for all mathematical expressions.
+Please perform accurate OCR on the attached image containing mathematical content. Transcribe all text to markdown format, ensuring that every piece of mathematical content is represented using LaTeX within `$...$` delimiters or `$$...$$` for multiline expressions. Do not use HTML, Unicode characters, or any other formatting—only LaTeX for all mathematical expressions. Ensure that textual format will render correctly under markdown rules, including line breaks and emphasis.
+
 For example:
 * Fractions should be written as `$\\frac{a}{b}$`.
 * Integrals should appear as `$\\int_a^b f(x) \\, dx$`.
 * Any superscripts or subscripts should be formatted using LaTeX, such as `$x^2$` or `$a_i$`.
+* Headings should appear as `# Heading` or `## Heading`
+* Lists should appear as ```
+
+  * Item1
+  * Item2
+
+``` (with a blank line before and after)
+
 If you encounter any graphs or diagrams, please provide a detailed description of the content in text form in the form `[diagram: <description>]`.
-Contents pages should be formatted without any dotted lines. List the page number directly after the title. For example:
-```
-# Contents
 
-1. Introduction: 1
-2. Methods: 3
-3. Results: 5
+If there are spaces or lines for written answers, omit these from the transcription. Under no circumstances include `...` for writing spaces.
 
-```
-Your output should strictly adhere to these guidelines, focusing only on the textual and mathematical content, with all mathematical elements formatted exclusively using LaTeX. Graphs and diagrams should be replaced with a detailed description.
+Your output should strictly adhere to these guidelines, only transcribing the textual and mathematical content, with all mathematical elements formatted exclusively using LaTeX. Graphs and diagrams should be replaced with a detailed description.
 '''
 
 total_result_text = ''
@@ -63,23 +66,26 @@ last_response = None
 for image in read_images(path):
     parts = [{'role': 'user', 'parts': [prompt]}]
     if last_image:
-        parts.append({'role': 'user', 'parts': [last_image]})
+        parts.append({'role': 'user', 'parts': [last_image, 'OCR this image.']})
         parts.append({'role': 'model', 'parts': [last_response]})
-    parts.append({'role': 'user', 'parts': [image]})
+    parts.append({'role': 'user', 'parts': [image, 'OCR this image.']})
     do_continue = True
+    temperature = 0.1
     while do_continue:
         try:
-            result = model.generate_content(parts, generation_config={'temperature': 0.1})
+            result = model.generate_content(parts, generation_config={'temperature': temperature})
             print(result)
             result_text = result.text
             print(result_text)
         except Exception as e:
             print('Retrying...', e)
+            print(temperature)
             time.sleep(15)
+            temperature += 0.1
             continue
         time.sleep(5)
         do_continue = False
-    total_result_text += result_text.strip() + '\n'
+    total_result_text += result_text.strip() + '\n\n'
     last_image = image
     last_response = result_text.strip()
 
